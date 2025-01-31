@@ -1,0 +1,1170 @@
+{
+  "address": "BV7MhRzrPUKPjBFYHJkuipQTcKjkSLAFJzsF3zNUYeB6",
+  "metadata": {
+    "name": "aixblock_rewards",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "calculate_monthly_points",
+      "discriminator": [
+        45,
+        207,
+        187,
+        60,
+        35,
+        57,
+        248,
+        232
+      ],
+      "accounts": [
+        {
+          "name": "points_config",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "distribution_account"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_contributor",
+      "discriminator": [
+        110,
+        184,
+        236,
+        66,
+        220,
+        3,
+        68,
+        216
+      ],
+      "accounts": [
+        {
+          "name": "contributor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "distribute_tokens",
+      "discriminator": [
+        105,
+        69,
+        130,
+        52,
+        196,
+        28,
+        176,
+        120
+      ],
+      "accounts": [
+        {
+          "name": "points_config",
+          "writable": true
+        },
+        {
+          "name": "contributor",
+          "writable": true
+        },
+        {
+          "name": "reward_vault",
+          "writable": true
+        },
+        {
+          "name": "contributor_token_account",
+          "writable": true
+        },
+        {
+          "name": "reward_vault_authority"
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "distribution_period",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  105,
+                  115,
+                  116,
+                  114,
+                  105,
+                  98,
+                  117,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "points_config"
+              },
+              {
+                "kind": "account",
+                "path": "points_config.current_period",
+                "account": "PointsConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "vault_authority_bump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "points_config",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "InitializeArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "process_add_to_reserve",
+      "discriminator": [
+        29,
+        251,
+        98,
+        127,
+        86,
+        190,
+        166,
+        90
+      ],
+      "accounts": [
+        {
+          "name": "points_config",
+          "writable": true
+        },
+        {
+          "name": "reserve_vault",
+          "writable": true
+        },
+        {
+          "name": "distribution_vault",
+          "writable": true
+        },
+        {
+          "name": "reserve_vault_authority"
+        },
+        {
+          "name": "distribution_vault_authority"
+        },
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "vault_authority_bump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "process_reserve_transfer",
+      "discriminator": [
+        230,
+        31,
+        187,
+        88,
+        0,
+        36,
+        68,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "points_config",
+          "writable": true
+        },
+        {
+          "name": "reserve_vault",
+          "writable": true
+        },
+        {
+          "name": "distribution_vault",
+          "writable": true
+        },
+        {
+          "name": "reserve_vault_authority"
+        },
+        {
+          "name": "distribution_vault_authority"
+        },
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "vault_authority_bump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "record_contribution",
+      "discriminator": [
+        121,
+        55,
+        143,
+        174,
+        85,
+        36,
+        104,
+        228
+      ],
+      "accounts": [
+        {
+          "name": "contributor",
+          "writable": true
+        },
+        {
+          "name": "contribution",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  116,
+                  114,
+                  105,
+                  98,
+                  117,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "contributor"
+              },
+              {
+                "kind": "account",
+                "path": "contributor.contribution_count",
+                "account": "Contributor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "points_config",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "contribution_type",
+          "type": {
+            "defined": {
+              "name": "ContributionType"
+            }
+          }
+        },
+        {
+          "name": "metadata",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "impact_score",
+          "type": "u8"
+        },
+        {
+          "name": "bump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "update_contributor_points",
+      "discriminator": [
+        234,
+        38,
+        1,
+        28,
+        125,
+        167,
+        16,
+        44
+      ],
+      "accounts": [
+        {
+          "name": "contributor",
+          "writable": true
+        },
+        {
+          "name": "points_config",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_reserve_config",
+      "discriminator": [
+        61,
+        148,
+        100,
+        70,
+        143,
+        107,
+        17,
+        13
+      ],
+      "accounts": [
+        {
+          "name": "points_config",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_reserve_ratio",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "new_monthly_threshold",
+          "type": {
+            "option": "u64"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Contribution",
+      "discriminator": [
+        182,
+        187,
+        14,
+        111,
+        72,
+        167,
+        242,
+        212
+      ]
+    },
+    {
+      "name": "Contributor",
+      "discriminator": [
+        222,
+        222,
+        255,
+        212,
+        133,
+        49,
+        27,
+        93
+      ]
+    },
+    {
+      "name": "DistributionPeriod",
+      "discriminator": [
+        99,
+        41,
+        15,
+        186,
+        246,
+        24,
+        115,
+        140
+      ]
+    },
+    {
+      "name": "PointsConfig",
+      "discriminator": [
+        224,
+        166,
+        24,
+        118,
+        139,
+        55,
+        141,
+        239
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ContributionRecorded",
+      "discriminator": [
+        203,
+        113,
+        176,
+        23,
+        205,
+        17,
+        184,
+        101
+      ]
+    },
+    {
+      "name": "ContributorCreated",
+      "discriminator": [
+        112,
+        14,
+        50,
+        216,
+        129,
+        42,
+        60,
+        64
+      ]
+    },
+    {
+      "name": "ContributorPointsUpdated",
+      "discriminator": [
+        137,
+        191,
+        207,
+        174,
+        87,
+        169,
+        86,
+        214
+      ]
+    },
+    {
+      "name": "MonthlyPointsCalculated",
+      "discriminator": [
+        228,
+        74,
+        231,
+        225,
+        222,
+        79,
+        77,
+        114
+      ]
+    },
+    {
+      "name": "ProgramInitialized",
+      "discriminator": [
+        43,
+        70,
+        110,
+        241,
+        199,
+        218,
+        221,
+        245
+      ]
+    },
+    {
+      "name": "ReserveDeposit",
+      "discriminator": [
+        199,
+        40,
+        176,
+        78,
+        52,
+        0,
+        184,
+        137
+      ]
+    },
+    {
+      "name": "ReserveTransfer",
+      "discriminator": [
+        176,
+        140,
+        218,
+        46,
+        236,
+        248,
+        164,
+        155
+      ]
+    },
+    {
+      "name": "TokensDistributed",
+      "discriminator": [
+        117,
+        252,
+        224,
+        3,
+        212,
+        156,
+        207,
+        43
+      ]
+    },
+    {
+      "name": "aixblock_rewards::instructions::manage_reserve::ReserveConfigUpdated",
+      "discriminator": [
+        137,
+        71,
+        35,
+        179,
+        205,
+        230,
+        29,
+        133
+      ]
+    },
+    {
+      "name": "aixblock_rewards::instructions::update_reserve::ReserveConfigUpdated",
+      "discriminator": [
+        137,
+        71,
+        35,
+        179,
+        205,
+        230,
+        29,
+        133
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidContributionAmount",
+      "msg": "Contribution amount must be greater than zero"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidPointsCalculation",
+      "msg": "Invalid points calculation"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientBalance",
+      "msg": "Insufficient token balance for distribution"
+    },
+    {
+      "code": 6003,
+      "name": "DistributionPeriodNotEnded",
+      "msg": "Distribution period not ended"
+    },
+    {
+      "code": 6004,
+      "name": "ContributorNotFound",
+      "msg": "Contributor not found"
+    },
+    {
+      "code": 6005,
+      "name": "Unauthorized",
+      "msg": "Unauthorized access"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidContributionType",
+      "msg": "Invalid contribution type"
+    },
+    {
+      "code": 6007,
+      "name": "DistributionAlreadyProcessed",
+      "msg": "Monthly distribution already processed"
+    },
+    {
+      "code": 6008,
+      "name": "BelowDistributionThreshold",
+      "msg": "Below minimum threshold for distribution"
+    },
+    {
+      "code": 6009,
+      "name": "ReserveCalculationError",
+      "msg": "Reserve calculation error"
+    }
+  ],
+  "types": [
+    {
+      "name": "Contribution",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contributor",
+            "type": "pubkey"
+          },
+          {
+            "name": "contribution_type",
+            "type": {
+              "defined": {
+                "name": "ContributionType"
+              }
+            }
+          },
+          {
+            "name": "points",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "metadata",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "is_verified",
+            "type": "bool"
+          },
+          {
+            "name": "period",
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContributionRecorded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contributor",
+            "type": "pubkey"
+          },
+          {
+            "name": "contribution_type",
+            "type": {
+              "defined": {
+                "name": "ContributionType"
+              }
+            }
+          },
+          {
+            "name": "points",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "period",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContributionType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Code"
+          },
+          {
+            "name": "Review"
+          },
+          {
+            "name": "Documentation"
+          },
+          {
+            "name": "Community"
+          },
+          {
+            "name": "Other"
+          },
+          {
+            "name": "Testing"
+          },
+          {
+            "name": "BugReport"
+          },
+          {
+            "name": "PullRequest"
+          },
+          {
+            "name": "CodeCommit"
+          },
+          {
+            "name": "CodeReview"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Contributor",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_points",
+            "type": "u64"
+          },
+          {
+            "name": "current_month_points",
+            "type": "u64"
+          },
+          {
+            "name": "tokens_claimed",
+            "type": "u64"
+          },
+          {
+            "name": "last_claim_time",
+            "type": "i64"
+          },
+          {
+            "name": "contribution_count",
+            "type": "u32"
+          },
+          {
+            "name": "is_verified",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContributorCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "contributor",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContributorPointsUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contributor",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_points",
+            "type": "u64"
+          },
+          {
+            "name": "period",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DistributionPeriod",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "period",
+            "type": "u16"
+          },
+          {
+            "name": "total_tokens",
+            "type": "u64"
+          },
+          {
+            "name": "tokens_distributed",
+            "type": "u64"
+          },
+          {
+            "name": "total_points",
+            "type": "u64"
+          },
+          {
+            "name": "is_completed",
+            "type": "bool"
+          },
+          {
+            "name": "start_time",
+            "type": "i64"
+          },
+          {
+            "name": "end_time",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitializeArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "monthly_threshold",
+            "type": "u64"
+          },
+          {
+            "name": "reserve_ratio",
+            "type": "u16"
+          },
+          {
+            "name": "max_points_per_type",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MonthlyPointsCalculated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "period",
+            "type": "u16"
+          },
+          {
+            "name": "total_points",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "meets_threshold",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PointsConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "monthly_threshold",
+            "type": "u64"
+          },
+          {
+            "name": "max_points_per_type",
+            "type": "u64"
+          },
+          {
+            "name": "reserve_ratio",
+            "type": "u16"
+          },
+          {
+            "name": "current_period",
+            "type": "u16"
+          },
+          {
+            "name": "period_total_points",
+            "type": "u64"
+          },
+          {
+            "name": "last_calculation_time",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProgramInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "monthly_threshold",
+            "type": "u64"
+          },
+          {
+            "name": "reserve_ratio",
+            "type": "u16"
+          },
+          {
+            "name": "max_points_per_type",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReserveDeposit",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "new_reserve_balance",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReserveTransfer",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "from_reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "to_distribution",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokensDistributed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contributor",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "period",
+            "type": "u16"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "aixblock_rewards::instructions::manage_reserve::ReserveConfigUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve_ratio",
+            "type": "u16"
+          },
+          {
+            "name": "monthly_threshold",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "aixblock_rewards::instructions::update_reserve::ReserveConfigUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve_ratio",
+            "type": "u16"
+          },
+          {
+            "name": "monthly_threshold",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}
