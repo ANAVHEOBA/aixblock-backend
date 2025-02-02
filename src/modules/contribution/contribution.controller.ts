@@ -33,6 +33,30 @@ export class ContributionController {
             next(error);
         }
     }
+
+
+    async getContributorHistory(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { contributorAddress } = req.params;
+
+            // Validate contributor address
+            try {
+                new PublicKey(contributorAddress);
+            } catch (error) {
+                throw new AppError(400, 'Invalid contributor address', 'INVALID_ADDRESS');
+            }
+
+            const history = await contributionService.getContributorHistory(contributorAddress);
+
+            res.status(200).json({
+                success: true,
+                data: history,
+                timestamp: Date.now()
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export const contributionController = new ContributionController();

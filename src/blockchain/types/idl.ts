@@ -12,7 +12,6 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
                 type: "publicKey"
             };
         }
-        // Handle ContributionType enum references
         if (field.type?.defined?.name === 'ContributionType') {
             return {
                 ...field,
@@ -24,9 +23,47 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
         return field;
     }
 
+    // Helper function to transform PDA seeds
+    function transformPdaSeeds(pda: any) {
+        if (!pda || !pda.seeds) return undefined;
+        
+        return {
+            seeds: pda.seeds.map((seed: any) => {
+                if (seed.kind === 'const') {
+                    // Convert const value to string format for Anchor
+                    return {
+                        kind: 'const',
+                        type: 'string',
+                        value: Buffer.from(seed.value).toString('utf8')
+                    };
+                }
+                if (seed.kind === 'account') {
+                    return {
+                        kind: 'account',
+                        type: 'publicKey',
+                        account: seed.account,
+                        path: seed.path
+                    };
+                }
+                return seed;
+            }),
+            programId: idl.metadata.address
+        };
+    }
+
+    // Transform instruction accounts
+    function transformInstructionAccounts(accounts: any[]) {
+        return accounts.map((acc: any) => ({
+            ...acc,
+            name: acc.name.toLowerCase(),
+            pda: transformPdaSeeds(acc.pda),
+            isMut: acc.writable || false,
+            isSigner: acc.signer || false
+        }));
+    }
+
     // Transform all types
     const transformedTypes = (idl.types || []).map((type: any) => {
-        // Special handling for ContributionType enum
         if (type.name === 'ContributionType') {
             return {
                 name: type.name,
@@ -47,99 +84,61 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
         };
     });
 
-    // Find and transform account types
-    const accountTypes = idl.types.filter((type: any) => 
-        idl.accounts.some((acc: any) => acc.name === type.name)
-    ).map((type: any) => ({
-        ...type,
-        type: {
-            ...type.type,
-            fields: type.type.fields.map(transformFieldType)
-        }
-    }));
+    // Transform accounts with proper PDA handling
+    const accounts = (idl.accounts || []).map((account: any) => {
+        const accountType = idl.types.find((type: any) => type.name === account.name);
+        if (!accountType) return account;
+
+        return {
+            name: account.name.toLowerCase(),
+            type: {
+                kind: 'struct',
+                fields: accountType.type.fields.map(transformFieldType)
+            },
+            pda: transformPdaSeeds(account.pda),
+            discriminator: account.discriminator
+        };
+    });
 
     // Create the adapted IDL
     const anchorIdl = {
         version: idl.metadata.version,
         name: idl.metadata.name.toLowerCase(),
-        instructions: idl.instructions.map((ix: any) => {
-            // Transform instruction arguments to handle enums
-            const transformedArgs = ix.args?.map((arg: any) => {
-                if (arg.type?.defined?.name === 'ContributionType') {
-                    return {
-                        ...arg,
-                        type: {
-                            defined: "ContributionType"
-                        }
-                    };
+        instructions: idl.instructions.map((ix: any) => ({
+            name: ix.name.toLowerCase(),
+            accounts: transformInstructionAccounts(ix.accounts),
+            args: ix.name === 'initialize' ? [
+                {
+                    name: "args",
+                    type: {
+                        defined: "InitializeArgs"
+                    }
                 }
-                return arg;
-            }) || [];
-
-            if (ix.name === 'initialize') {
-                return {
-                    ...ix,
-                    name: ix.name.toLowerCase(),
-                    args: [
-                        {
-                            name: "monthly_threshold",
-                            type: "u64"
-                        },
-                        {
-                            name: "reserve_ratio",
-                            type: "u16"
-                        },
-                        {
-                            name: "max_points_per_type",
-                            type: "u64"
-                        }
-                    ]
-                };
-            }
-            
-            if (ix.name === 'record_contribution') {
-                return {
-                    ...ix,
-                    name: ix.name.toLowerCase(),
-                    args: [
-                        {
-                            name: "contribution_type",
-                            type: {
-                                defined: "ContributionType"
-                            }
-                        },
-                        {
-                            name: "metadata",
-                            type: {
-                                array: ["u8", 32]
-                            }
-                        },
-                        {
-                            name: "impact_score",
-                            type: "u8"
-                        },
-                        {
-                            name: "bump",
-                            type: "u8"
-                        }
-                    ]
-                };
-            }
-
-            return {
-                ...ix,
-                name: ix.name.toLowerCase(),
-                args: transformedArgs
-            };
-        }),
-        accounts: accountTypes.map((type: any) => {
-            const account = idl.accounts.find((acc: any) => acc.name === type.name);
-            return {
-                name: type.name,
-                type: type.type,
-                discriminator: account.discriminator
-            };
-        }),
+            ] : ix.name === 'record_contribution' ? [
+                {
+                    name: "contribution_type",
+                    type: {
+                        defined: "ContributionType"
+                    }
+                },
+                {
+                    name: "metadata",
+                    type: {
+                        array: ["u8", 32]
+                    }
+                },
+                {
+                    name: "impact_score",
+                    type: "u8"
+                },
+                {
+                    name: "bump",
+                    type: "u8"
+                }
+            ] : (ix.args || []).map(transformFieldType),
+            discriminator: ix.discriminator
+        })),
+        accounts,
         types: transformedTypes,
         events: [
             {
@@ -173,9 +172,5 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
         }
     };
 
-    // Log for debugging
-    console.log('Types:', JSON.stringify(anchorIdl.types, null, 2));
-    console.log('ContributionType:', JSON.stringify(anchorIdl.types.find(t => t.name === 'ContributionType'), null, 2));
-    
     return anchorIdl as AixblockRewardsIdl;
 }

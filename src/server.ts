@@ -13,6 +13,11 @@ app.post(
     contributionController.recordContribution
 );
 
+app.get(
+    '/api/contributions/:contributorAddress',
+    contributionController.getContributorHistory
+);
+
 // Error handling middleware
 const errorHandler: ErrorRequestHandler = (
     err: Error,

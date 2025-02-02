@@ -35,6 +35,27 @@ export class ContributionService {
             throw mapSolanaError(error);
         }
     }
+
+
+    async getContributorHistory(contributorAddress: string): Promise<ContributionHistory> {
+        try {
+            const pubkey = new PublicKey(contributorAddress);
+            
+            // Fetch contributor info and contributions in parallel
+            const [contributorInfo, contributions] = await Promise.all([
+                this.programService.getContributorInfo(pubkey),
+                this.programService.getContributorHistory(pubkey)
+            ]);
+
+            return {
+                contributorAddress,
+                totalPoints: contributorInfo.totalPoints,
+                contributions
+            };
+        } catch (error) {
+            throw mapSolanaError(error);
+        }
+    }
 }
 
 export const contributionService = new ContributionService();

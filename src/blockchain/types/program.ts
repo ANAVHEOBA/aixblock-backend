@@ -2,16 +2,22 @@ import { Idl } from '@project-serum/anchor';
 import type { AixblockRewards } from './aixblock_rewards';
 
 export enum ContributionType {
-    Code = 'code',
-    Review = 'review',
-    Documentation = 'documentation',
-    Community = 'community',
-    Other = 'other',
-    Testing = 'testing',
-    BugReport = 'bugReport',
-    PullRequest = 'pullRequest',
-    CodeCommit = 'codeCommit',
-    CodeReview = 'codeReview'
+    Code = 'Code',
+    Review = 'Review',
+    Documentation = 'Documentation',
+    Community = 'Community',
+    Other = 'Other',
+    Testing = 'Testing',
+    BugReport = 'BugReport',
+    PullRequest = 'PullRequest',
+    CodeCommit = 'CodeCommit',
+    CodeReview = 'CodeReview'
+}
+
+export interface InitializeArgs {
+    monthlyThreshold: number;
+    reserveRatio: number;
+    maxPointsPerType: number;
 }
 
 export type AixblockRewardsIDL = Idl & {

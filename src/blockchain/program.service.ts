@@ -4,7 +4,8 @@ import {
     Keypair,
     ConnectionConfig,
     SystemProgram,
-    TransactionSignature
+    TransactionSignature,
+    Commitment
 } from '@solana/web3.js';
 import {
     Program,
@@ -15,7 +16,18 @@ import {
 } from '@project-serum/anchor';
 import { IDL, PROGRAM_ID } from './config';
 import type { AixblockRewardsIDL } from './types/program';
+import { ContributionType } from './types/program';
 import { config } from '../config/env';
+
+interface ContributionDetail {
+    contributionAddress: string;
+    contributorAddress: string;
+    contributionType: string;
+    metadata: string;
+    impactScore: number;
+    timestamp: number;
+    points: number;
+}
 
 export class ProgramService {
     private program: Program<AixblockRewardsIDL>;
@@ -26,12 +38,10 @@ export class ProgramService {
 
     constructor() {
         try {
-            
             this.connection = new Connection(config.solana.rpcEndpoint, {
                 commitment: 'confirmed'
             } as ConnectionConfig);
-    
-            // Initialize wallet from private key
+
             const privateKeyBase64 = config.solana.authorityPrivateKey;
             if (!privateKeyBase64) {
                 throw new Error('Authority private key is not set in the configuration.');
@@ -39,27 +49,28 @@ export class ProgramService {
             const privateKeyBuffer = Buffer.from(privateKeyBase64, 'base64');
             const privateKeyArray = JSON.parse(privateKeyBuffer.toString());
             this.wallet = Keypair.fromSecretKey(new Uint8Array(privateKeyArray));
-    
-            // Initialize program with proper provider
+
             const provider = new AnchorProvider(
                 this.connection,
                 new Wallet(this.wallet),
                 { commitment: 'confirmed' }
             );
+
             this.program = new Program(
                 IDL,
                 new PublicKey(PROGRAM_ID),
                 provider
             );
 
-            // Derive points_config PDA using seeds
             const [pointsConfigPda, pointsConfigBump] = PublicKey.findProgramAddressSync(
-                [Buffer.from("points_config"), this.wallet.publicKey.toBuffer()],
+                [
+                    Buffer.from('points_config'),
+                    this.wallet.publicKey.toBuffer()
+                ],
                 this.program.programId
             );
             this.pointsConfigPda = pointsConfigPda;
             this.pointsConfigBump = pointsConfigBump;
-            console.log('Points config PDA:', this.pointsConfigPda.toBase58());
 
         } catch (error) {
             console.error('Error initializing ProgramService:', error);
@@ -67,152 +78,252 @@ export class ProgramService {
         }
     }
 
-    async initializeProgram() {
+    private async initializeProgram(): Promise<string> {
         try {
             console.log('Starting initialization...');
-            console.log('Points Config PDA:', this.pointsConfigPda.toBase58());
+            
+            // Get the PDA and bump again to ensure we have the correct ones
+            const [pointsConfigPda, bump] = PublicKey.findProgramAddressSync(
+                [
+                    Buffer.from('points_config'),
+                    this.wallet.publicKey.toBuffer()
+                ],
+                this.program.programId
+            );
+    
+            const initializeArgs = {
+                monthlyThreshold: new BN(1000000),
+                reserveRatio: 1000,
+                maxPointsPerType: new BN(100)
+            };
+    
+            console.log('Initialize args:', initializeArgs);
+            console.log('Points Config PDA:', pointsConfigPda.toBase58());
             console.log('Authority:', this.wallet.publicKey.toBase58());
-            
-            const tx = await this.program.methods
-                .initialize({
-                    monthlyThreshold: new BN(1000),
-                    maxPointsPerType: new BN(500),
-                    reserveRatio: 100
-                })
+            console.log('Bump:', bump);
+    
+            // Create the transaction
+            const transaction = await this.program.methods
+                .initialize(initializeArgs)
                 .accounts({
-                    pointsConfig: this.pointsConfigPda,
+                    points_config: pointsConfigPda,
                     authority: this.wallet.publicKey,
-                    systemProgram: SystemProgram.programId,
+                    system_program: SystemProgram.programId,
                 })
-                .signers([this.wallet])
-                .rpc();
-
-            // Use the newer confirmation method
-            const latestBlockhash = await this.connection.getLatestBlockhash();
-            await this.connection.confirmTransaction({
-                signature: tx,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+                .transaction();
+    
+            // Add recent blockhash and fee payer
+            transaction.feePayer = this.wallet.publicKey;
+            transaction.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+    
+            // Sign the transaction
+            transaction.sign(this.wallet);
+    
+            // Send the transaction
+            const rawTransaction = transaction.serialize();
+            const signature = await this.connection.sendRawTransaction(rawTransaction, {
+                skipPreflight: false,
+                preflightCommitment: 'confirmed'
             });
-            
-            console.log('Points config initialized with tx:', tx);
-            
+    
+            // Wait for confirmation
+            const confirmation = await this.connection.confirmTransaction({
+                signature,
+                blockhash: transaction.recentBlockhash!,
+                lastValidBlockHeight: (await this.connection.getLatestBlockhash()).lastValidBlockHeight
+            }, 'confirmed');
+    
+            if (confirmation.value.err) {
+                throw new Error(`Transaction failed: ${confirmation.value.err.toString()}`);
+            }
+    
             // Verify the account was created
-            const pointsConfig = await this.program.account.pointsConfig.fetch(this.pointsConfigPda);
-            console.log('Points config state:', pointsConfig);
+            const pointsConfig = await this.program.account.pointsConfig.fetch(
+                pointsConfigPda
+            );
+            
+            console.log('Points config created:', pointsConfig);
+            return signature;
+    
         } catch (error) {
             console.error('Detailed initialization error:', error);
             if (error instanceof AnchorError) {
-                console.error('Anchor Error Code:', error.error.errorCode);
-                console.error('Anchor Error Message:', error.error.errorMessage);
-                console.error('Program Log:', error.program);
+                console.error('Anchor Error Details:', {
+                    code: error.error.errorCode,
+                    msg: error.error.errorMessage,
+                    program: error.program
+                });
+            }
+            // Log additional error details if available
+            if ('logs' in error) {
+                console.error('Transaction logs:', error.logs);
             }
             throw error;
         }
     }
-
+    
     async recordContribution(
         authority: PublicKey,
         contributionType: string,
         metadata: string,
         impactScore: number
-    ): Promise<string> {
+    ): Promise<TransactionSignature> {
         try {
-            console.log('Starting contribution recording...');
-            console.log('Authority (Contributor):', authority.toBase58());
-            console.log('Contribution Type:', contributionType);
-            console.log('Impact Score:', impactScore);
-
-            // Validate inputs
-            if (!authority || !(authority instanceof PublicKey)) {
-                throw new TypeError('Authority must be a valid PublicKey object');
+            // Ensure points config exists first
+            let pointsConfig;
+            try {
+                pointsConfig = await this.program.account.pointsConfig.fetch(this.pointsConfigPda);
+                console.log('Found existing points config:', pointsConfig);
+            } catch (error) {
+                console.log('Initializing points config...');
+                await this.initializeProgram();
+                pointsConfig = await this.program.account.pointsConfig.fetch(this.pointsConfigPda);
             }
-            if (!contributionType || typeof contributionType !== 'string') {
-                throw new TypeError('Contribution type must be a non-empty string');
+    
+            // Get contributor count for PDA seed
+            let contributorAccount;
+            try {
+                const [contributorPda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from('contributor'), authority.toBuffer()],
+                    this.program.programId
+                );
+                contributorAccount = await this.program.account.contributor.fetch(contributorPda);
+            } catch (error) {
+                contributorAccount = { contributionCount: 0 };
             }
-            if (!metadata || typeof metadata !== 'string') {
-                throw new TypeError('Metadata must be a non-empty string');
-            }
-            if (typeof impactScore !== 'number' || impactScore < 0 || impactScore > 255) {
-                throw new TypeError('Impact score must be between 0 and 255');
-            }
-
-            // Derive contributor address
-            const contributorPublicKey = authority;
-
-            // Derive contribution address with proper seed format
-            const [contributionAddress, contributionBump] = PublicKey.findProgramAddressSync(
+    
+            const [contributionPda, contributionBump] = PublicKey.findProgramAddressSync(
                 [
                     Buffer.from('contribution'),
-                    contributorPublicKey.toBuffer(),
-                    Buffer.from([0])
+                    authority.toBuffer(),
+                    Buffer.from([contributorAccount.contributionCount || 0])
+                ],
+                this.program.programId
+            );
+    
+            const [contributorPda] = PublicKey.findProgramAddressSync(
+                [Buffer.from('contributor'), authority.toBuffer()],
+                this.program.programId
+            );
+    
+            // Create metadata buffer
+            const metadataBuffer = Buffer.alloc(32);
+            const inputBuffer = Buffer.from(metadata, 'utf8');
+            inputBuffer.copy(metadataBuffer, 0, 0, Math.min(inputBuffer.length, 32));
+    
+            // Convert contribution type
+            const normalizedType = contributionType.charAt(0).toUpperCase() + 
+                               contributionType.slice(1).toLowerCase();
+    
+            // Create and sign transaction
+            const transaction = await this.program.methods
+            .recordContribution(
+                { [normalizedType]: {} },
+                [...metadataBuffer],
+                impactScore,
+                contributionBump
+            )
+            .accounts({
+                contributor: contributorPda,
+                contribution: contributionPda,
+                points_config: this.pointsConfigPda,  // Changed from pointsConfig
+                authority: authority,
+                system_program: SystemProgram.programId,  // Changed from systemProgram
+            })
+            .transaction();
+    
+            // Add recent blockhash and fee payer
+        transaction.feePayer = this.wallet.publicKey;
+        transaction.recentBlockhash = (await this.connection.getLatestBlockhash()).blockhash;
+
+        // Sign the transaction
+        transaction.sign(this.wallet);
+
+        // Send the transaction
+        const rawTransaction = transaction.serialize();
+        const signature = await this.connection.sendRawTransaction(rawTransaction, {
+            skipPreflight: false,
+            preflightCommitment: 'confirmed'
+        });
+
+        // Wait for confirmation
+        const confirmation = await this.connection.confirmTransaction({
+            signature,
+            blockhash: transaction.recentBlockhash!,
+            lastValidBlockHeight: (await this.connection.getLatestBlockhash()).lastValidBlockHeight
+        }, 'confirmed');
+
+        if (confirmation.value.err) {
+            throw new Error(`Transaction failed: ${confirmation.value.err.toString()}`);
+        }
+
+        console.log('Contribution recorded successfully:', signature);
+        return signature;
+    
+        } catch (error) {
+            console.error('Error in recordContribution:', error);
+            if (error instanceof AnchorError) {
+                console.error('Anchor Error Details:', {
+                    code: error.error.errorCode,
+                    msg: error.error.errorMessage,
+                    program: error.program
+                });
+            }
+            throw error;
+        }
+    }
+
+    async getContributorHistory(contributorAddress: PublicKey): Promise<ContributionDetail[]> {
+        try {
+            console.log('Fetching history for contributor:', contributorAddress.toBase58());
+
+            const contributions = await this.program.account.contribution.all([
+                {
+                    memcmp: {
+                        offset: 8,
+                        bytes: contributorAddress.toBase58()
+                    }
+                }
+            ]);
+
+            console.log(`Found ${contributions.length} contributions`);
+
+            const contributionDetails = contributions.map(contribution => ({
+                contributionAddress: contribution.publicKey.toBase58(),
+                contributorAddress: contributorAddress.toBase58(),
+                contributionType: Object.keys(contribution.account.contributionType)[0],
+                metadata: Buffer.from(contribution.account.metadata).toString('utf-8').replace(/\0/g, ''),
+                impactScore: contribution.account.impactScore,
+                timestamp: contribution.account.timestamp.toNumber(),
+                points: contribution.account.points.toNumber()
+            }));
+
+            return contributionDetails.sort((a, b) => b.timestamp - a.timestamp);
+        } catch (error) {
+            console.error('Error fetching contributor history:', error);
+            throw error;
+        }
+    }
+
+    async getContributorInfo(contributorAddress: PublicKey): Promise<any> {
+        try {
+            const [contributorPda] = PublicKey.findProgramAddressSync(
+                [
+                    Buffer.from('contributor'),
+                    contributorAddress.toBuffer()
                 ],
                 this.program.programId
             );
 
-            console.log('Contribution address:', contributionAddress.toBase58());
-            console.log('Contribution Bump:', contributionBump);
-
-            // Create metadata array with exactly 32 bytes
-            const metadataArray = new Array(32).fill(0);
-            const metadataBytes = Buffer.from(metadata, 'utf8');
-            
-            // Copy bytes one by one, ensuring we don't exceed 32 bytes
-            for (let i = 0; i < Math.min(metadataBytes.length, 32); i++) {
-                metadataArray[i] = metadataBytes[i];
-            }
-
-            console.log('Metadata Array Length:', metadataArray.length);
-            console.log('Points Config PDA:', this.pointsConfigPda.toBase58());
-            console.log('Program Authority:', this.wallet.publicKey.toBase58());
-            console.log('System Program ID:', SystemProgram.programId.toBase58());
-
-            // Initialize points config if it doesn't exist
-            try {
-                await this.program.account.pointsConfig.fetch(this.pointsConfigPda);
-            } catch (error) {
-                console.log('Points config not found, initializing...');
-                await this.initializeProgram();
-            }
-
-            // Record contribution with proper enum format for contributionType
-            const txRecord = await this.program.methods
-                .recordContribution(
-                    { [contributionType]: {} },
-                    metadataArray,
-                    impactScore,
-                    contributionBump
-                )
-                .accounts({
-                    contributor: contributorPublicKey,
-                    contribution: contributionAddress,
-                    pointsConfig: this.pointsConfigPda,
-                    authority: this.wallet.publicKey,
-                    systemProgram: SystemProgram.programId,
-                })
-                .signers([this.wallet])
-                .rpc();
-
-            // Use the newer confirmation method
-            const latestBlockhash = await this.connection.getLatestBlockhash();
-            await this.connection.confirmTransaction({
-                signature: txRecord,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-            });
-
-            console.log('Contribution recorded successfully:', txRecord);
-            return txRecord;
+            const contributorAccount = await this.program.account.contributor.fetch(contributorPda);
+            return {
+                address: contributorAddress.toBase58(),
+                totalPoints: contributorAccount.totalPoints.toNumber(),
+                lastUpdatePeriod: contributorAccount.lastUpdatePeriod,
+                bump: contributorAccount.bump
+            };
         } catch (error) {
-            console.error('Error recording contribution:', error);
-            if (error instanceof AnchorError) {
-                console.error('Anchor Error Code:', error.error.errorCode);
-                console.error('Anchor Error Message:', error.error.errorMessage);
-                console.error('Program Log:', error.program);
-            } else if (error instanceof Error) {
-                console.error('Error message:', error.message);
-                console.error('Error stack:', error.stack);
-            }
+            console.error('Error fetching contributor info:', error);
             throw error;
         }
     }
