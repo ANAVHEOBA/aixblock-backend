@@ -7,10 +7,12 @@ export class SolanaService {
     private programService: ProgramService;
 
     constructor() {
-        this.connection = new Connection(config.solana.rpcEndpoint);
-        // In production, you'd want to properly manage this keypair
-        const wallet = Keypair.generate(); // Temporary for testing
-        this.programService = new ProgramService(this.connection, wallet);
+        this.connection = new Connection(config.solana.rpcEndpoint, {
+            commitment: 'confirmed'
+        });
+        
+        // Create program service with proper initialization
+        this.programService = new ProgramService();
     }
 
     getProgramService(): ProgramService {

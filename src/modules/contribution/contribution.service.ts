@@ -12,12 +12,12 @@ export class ContributionService {
     ): Promise<ContributionResponse> {
         try {
             const authority = new PublicKey(contributorAddress);
-            const metadataBuffer = Buffer.from(contributionData.metadata);
+            const metadata = contributionData.metadata; // Pass as string directly
 
             const signature = await this.programService.recordContribution(
                 authority,
                 contributionData.contributionType,
-                metadataBuffer,
+                metadata, // Pass string here
                 contributionData.impactScore
             );
 
