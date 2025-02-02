@@ -8,7 +8,7 @@ export class ContributionController {
         try {
             // TODO: Re-enable authentication later
             // Temporarily use a test address
-            const contributorAddress = "5YNmS1R9nNSCDZD7KaQmoLp3MgHxqLYqE4PTnXv9qhsu";
+            const contributorAddress = "72iFm6oCRhpmVjfyefLT6mG1VXXXoD7QUZPTPR4ZTMxq";
             
             /* Commented out for testing
             const contributorAddress = req.headers['x-contributor-address'] as string;
