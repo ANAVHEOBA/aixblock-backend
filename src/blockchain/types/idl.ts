@@ -55,11 +55,11 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
     function transformInstructionAccounts(accounts: any[]) {
         return accounts.map((acc: any) => ({
             ...acc,
-            name: acc.name.toLowerCase(),
-            pda: transformPdaSeeds(acc.pda),
-            isMut: acc.writable || false,
-            isSigner: acc.signer || false
-        }));
+            name: acc.name.replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()),
+        pda: transformPdaSeeds(acc.pda),
+        isMut: acc.writable || false,
+        isSigner: acc.signer || false
+    }));
     }
 
     // Transform all types
@@ -86,14 +86,17 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
 
     // Transform accounts with proper PDA handling
     const accounts = (idl.accounts || []).map((account: any) => {
-        const accountType = idl.types.find((type: any) => type.name === account.name);
-        if (!accountType) return account;
+        // Find the corresponding type definition
+        const accountType = idl.types.find((type: any) => 
+            type.name.toLowerCase() === account.name.toLowerCase()
+        );
 
         return {
-            name: account.name.toLowerCase(),
+            // Transform snake_case to camelCase for the account name
+            name: account.name.replace(/_([a-z])/g, (g: string) => g[1].toUpperCase()),
             type: {
                 kind: 'struct',
-                fields: accountType.type.fields.map(transformFieldType)
+                fields: (accountType?.type?.fields || []).map(transformFieldType)
             },
             pda: transformPdaSeeds(account.pda),
             discriminator: account.discriminator
@@ -116,7 +119,7 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
                 }
             ] : ix.name === 'record_contribution' ? [
                 {
-                    name: "contribution_type",
+                    name: "contributiontype",
                     type: {
                         defined: "ContributionType"
                     }
@@ -128,7 +131,7 @@ export function adaptIdl(idl: any): AixblockRewardsIdl {
                     }
                 },
                 {
-                    name: "impact_score",
+                    name: "impactcore",
                     type: "u8"
                 },
                 {

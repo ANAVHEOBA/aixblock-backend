@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { PublicKey } from '@solana/web3.js';  // Add this import
 import { contributionService } from './contribution.service';
 import { ContributionRequest } from './contribution.model';
 import { AppError } from '../../utils/errors';
@@ -6,16 +7,15 @@ import { AppError } from '../../utils/errors';
 export class ContributionController {
     async recordContribution(req: Request, res: Response, next: NextFunction) {
         try {
-            // TODO: Re-enable authentication later
-            // Temporarily use a test address
-            const contributorAddress = "72iFm6oCRhpmVjfyefLT6mG1VXXXoD7QUZPTPR4ZTMxq";
+            // Get the contributor address from request body or params
+            const contributorAddress = req.body.contributorAddress || "EthU3J7hsudeXdTLRSSaoPQC7P75hD3r6ttPZF4uPaKK";
             
-            /* Commented out for testing
-            const contributorAddress = req.headers['x-contributor-address'] as string;
-            if (!contributorAddress) {
-                throw new AppError(401, 'Unauthorized', 'UNAUTHORIZED');
+            // Validate the address first
+            try {
+                new PublicKey(contributorAddress);
+            } catch (error) {
+                throw new AppError(400, 'Invalid contributor address', 'INVALID_ADDRESS');
             }
-            */
 
             const contributionData: ContributionRequest = req.body;
             
@@ -33,7 +33,7 @@ export class ContributionController {
             next(error);
         }
     }
-
+    
 
     async getContributorHistory(req: Request, res: Response, next: NextFunction) {
         try {
@@ -41,8 +41,10 @@ export class ContributionController {
 
             // Validate contributor address
             try {
-                new PublicKey(contributorAddress);
+                const pubkey = new PublicKey(contributorAddress);
+                console.log('Valid pubkey:', pubkey.toBase58());  // Add logging
             } catch (error) {
+                console.error('Invalid address error:', error);  // Add logging
                 throw new AppError(400, 'Invalid contributor address', 'INVALID_ADDRESS');
             }
 
@@ -51,6 +53,21 @@ export class ContributionController {
             res.status(200).json({
                 success: true,
                 data: history,
+                timestamp: Date.now()
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+
+    async getCurrentPeriodContributions(req: Request, res: Response, next: NextFunction) {
+        try {
+            const result = await contributionService.getCurrentPeriodContributions();
+
+            res.status(200).json({
+                success: true,
+                data: result,
                 timestamp: Date.now()
             });
         } catch (error) {
