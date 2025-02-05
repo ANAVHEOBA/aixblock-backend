@@ -55,7 +55,30 @@
         {
           "name": "contributor",
           "writable": true,
-          "signer": true
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  116,
+                  114,
+                  105,
+                  98,
+                  117,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
         },
         {
           "name": "authority",
@@ -172,7 +195,32 @@
         {
           "name": "points_config",
           "writable": true,
-          "signer": true
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  105,
+                  110,
+                  116,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
         },
         {
           "name": "authority",
@@ -589,6 +637,19 @@
       ]
     },
     {
+      "name": "ReserveConfigUpdated",
+      "discriminator": [
+        137,
+        71,
+        35,
+        179,
+        205,
+        230,
+        29,
+        133
+      ]
+    },
+    {
       "name": "ReserveDeposit",
       "discriminator": [
         199,
@@ -625,32 +686,6 @@
         156,
         207,
         43
-      ]
-    },
-    {
-      "name": "aixblock_rewards::instructions::manage_reserve::ReserveConfigUpdated",
-      "discriminator": [
-        137,
-        71,
-        35,
-        179,
-        205,
-        230,
-        29,
-        133
-      ]
-    },
-    {
-      "name": "aixblock_rewards::instructions::update_reserve::ReserveConfigUpdated",
-      "discriminator": [
-        137,
-        71,
-        35,
-        179,
-        205,
-        230,
-        29,
-        133
       ]
     }
   ],
@@ -790,6 +825,9 @@
     },
     {
       "name": "ContributionType",
+      "repr": {
+        "kind": "rust"
+      },
       "type": {
         "kind": "enum",
         "variants": [
@@ -1059,6 +1097,26 @@
       }
     },
     {
+      "name": "ReserveConfigUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve_ratio",
+            "type": "u16"
+          },
+          {
+            "name": "monthly_threshold",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "ReserveDeposit",
       "type": {
         "kind": "struct",
@@ -1118,46 +1176,6 @@
           {
             "name": "period",
             "type": "u16"
-          },
-          {
-            "name": "timestamp",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "aixblock_rewards::instructions::manage_reserve::ReserveConfigUpdated",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_ratio",
-            "type": "u16"
-          },
-          {
-            "name": "monthly_threshold",
-            "type": "u64"
-          },
-          {
-            "name": "timestamp",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "aixblock_rewards::instructions::update_reserve::ReserveConfigUpdated",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_ratio",
-            "type": "u16"
-          },
-          {
-            "name": "monthly_threshold",
-            "type": "u64"
           },
           {
             "name": "timestamp",
